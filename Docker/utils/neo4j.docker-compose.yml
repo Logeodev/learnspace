@@ -1,0 +1,43 @@
+services:
+  neo4j:
+    image: neo4j:latest
+    container_name: neo4j_container
+    environment:
+      - NEO4J_AUTH=neo4j/change_password
+      - NEO4J_PLUGINS=["apoc", "graph-data-science"]
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    volumes:
+      - neo4j_data:/data
+  
+  neo-dash:
+    image: nielsdejong/neodash:latest
+    container_name: neodash_container
+    ports:
+      - "5005:5005"
+    environment:
+      - standalone="true"
+      - standaloneProtocol="neo4j"
+      - standaloneHost="localhost"
+      - standalonePort="7687"
+      - standaloneDatabase="neo4j"
+      - standaloneDashboardName="main Dashboard"
+      - standaloneUsername="neo4j"
+      - standalonePassword="change_password"
+    depends_on:
+      - neo4j
+
+  embedder:
+    build:
+      context: ./embed-service
+      dockerfile: Dockerfile
+    container_name: embedder
+    ports:
+      - "5000:5000"
+    restart: unless-stopped
+
+volumes:
+  neo4j_data:
+
+    
