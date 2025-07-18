@@ -1,0 +1,75 @@
+# https://github.com/rayjasson98/docker-mysql-elk
+
+services:
+  mysql:
+    image: mysql
+    container_name: db-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      - ./sql/:/docker-entrypoint-initdb.d/
+      - mysql-data:/var/lib/mysql
+    ports:
+      - 3310:3306
+    networks:
+      - net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 30s
+      timeout: 30s
+      retries: 5
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:$ELK_VERSION
+    container_name: db-elk
+    environment:
+      discovery.type: single-node
+      ELASTIC_PASSWORD: elastic123
+    ports:
+      - "9200:9200"
+    networks:
+      - net
+
+  logstash:
+    image: docker.elastic.co/logstash/logstash:$ELK_VERSION
+    container_name: pipelines-elk
+    volumes:
+      - ./ELK/Logstash/mappings/releve_mapping.json:/usr/share/elasticsearch/config/releve_mapping.json
+      - ./ELK/Logstash/logstash.yml:/usr/share/logstash/config/logstash.yml      
+      - ./ELK/Logstash/pipelines:/usr/share/logstash/pipeline
+      - ./ELK/Logstash/mysql-connector-j-9.0.0.jar:/usr/share/logstash/mysql-connector-java.jar
+      - ./ELK/Logstash/init.sh:/usr/local/bin/init.sh
+    networks:
+      - net
+    depends_on:
+      - mysql
+      - elasticsearch
+    environment:
+      - path.settings=/usr/share/logstash/config
+    command: ["/usr/local/bin/init.sh"]
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:$ELK_VERSION
+    container_name: app-elk
+    ports:
+      - "5601:5601"
+    environment:
+      ELASTICSEARCH_HOSTS: http://elasticsearch:9200
+      ELASTICSEARCH_USERNAME: elastic
+      ELASTICSEARCH_PASSWORD: elastic123
+    networks:
+      - net
+    depends_on:
+      - elasticsearch
+    volumes:
+      - kibana-data:/usr/share/kibana/data
+      - ./ELK/Kibana/backups:/usr/share/backup
+
+volumes:
+  mysql-data:
+  kibana-data:
+
+networks:
+  net:
+    driver: bridge
