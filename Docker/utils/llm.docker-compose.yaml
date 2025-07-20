@@ -1,0 +1,45 @@
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ./ollama-data:/root/.ollama
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    pull_policy: always
+    tty: true
+    restart: unless-stopped
+
+  anything-llm:
+    image: mintplexlabs/anythingllm:latest
+    container_name: anything-llm
+    ports:
+      - "3041:3001"
+    volumes:
+      - C:/Users/leolo/Documents/anythingllm:/app/server/storage
+      - C:/Users/leolo/Documents/anythingllm/.env:/app/server/.env
+    environment:
+      - STORAGE_DIR=/app/server/storage
+
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: open-webui
+    ports:
+      - "3000:8080"
+    environment:
+      - OLLAMA_BASE_URL=http://ollama:11434
+    volumes:
+      - open-webui:/app/backend/data
+    restart: always
+    depends_on:
+      - ollama
+
+volumes:
+  open-webui:
