@@ -130,6 +130,7 @@ $$
 y(t) = T_t + S_t + R_t
 $$
 
+> [Utilisation et interpretation des ACF et PACF](https://www.kaggle.com/code/iamleonie/time-series-interpreting-acf-and-pacf#%F0%9F%9A%80-Cheat-Sheet)
 
 ## Modèle d'auto-régression
 
